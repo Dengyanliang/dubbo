@@ -158,23 +158,41 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         }
     }
 
+    /**
+     * 主要逻辑：
+     *  1、检测是否存在注册中心配置类，不存在则抛出异常
+     *  2、检测参数映射集合，也就是map
+     *  3、构建注册中心链接列表
+     *  4、遍历链接列表，并根据条件决定是否将其添加到registryList中
+     * @param provider
+     * @return
+     */
     protected List<URL> loadRegistries(boolean provider) {
+        // 检测是否存在注册中心，不存在抛出异常
         checkRegistry();
         List<URL> registryList = new ArrayList<URL>();
         if (registries != null && !registries.isEmpty()) {
             for (RegistryConfig config : registries) {
                 String address = config.getAddress();
                 if (address == null || address.length() == 0) {
+                    // 若address为空，则将其设置 0.0.0.0
                     address = Constants.ANYHOST_VALUE;
                 }
+
+                // 从系统属性中加载注册中心地址
                 String sysaddress = System.getProperty("dubbo.registry.address");
                 if (sysaddress != null && sysaddress.length() > 0) {
                     address = sysaddress;
                 }
+                // 检测address是否合法
                 if (address.length() > 0 && !RegistryConfig.NO_AVAILABLE.equalsIgnoreCase(address)) {
                     Map<String, String> map = new HashMap<String, String>();
+                    // 添加 ApplicationConfig 中的字段信息到 map中
                     appendParameters(map, application);
+                    // 添加 RegistryConfig 中的字段信息到 map 中
                     appendParameters(map, config);
+
+                    // 添加path、dubbo、pid、protocol 等信息到 map 中
                     map.put("path", RegistryService.class.getName());
                     map.put("dubbo", Version.getProtocolVersion());
                     map.put(Constants.TIMESTAMP_KEY, String.valueOf(System.currentTimeMillis()));
@@ -188,10 +206,16 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                             map.put("protocol", "dubbo");
                         }
                     }
+
+                    // 解析得到URL列表，address可能包含多个注册中心ip，因此解析得到一个URL列表
                     List<URL> urls = UrlUtils.parseURLs(address, map);
                     for (URL url : urls) {
                         url = url.addParameter(Constants.REGISTRY_KEY, url.getProtocol());
+                        // 将URL协议头设置为registry
                         url = url.setProtocol(Constants.REGISTRY_PROTOCOL);
+
+                        // 通过判断条件，决定是否添加url到registryList中，条件如下：
+                        // (服务提供者 && register = true 或 null) || (非服务提供者 && subscribe = true 或 null)
                         if ((provider && url.getParameter(Constants.REGISTER_KEY, true))
                                 || (!provider && url.getParameter(Constants.SUBSCRIBE_KEY, true))) {
                             registryList.add(url);

@@ -99,20 +99,30 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+        /**
+         * isDelay() 这个字面意思是"是否延迟暴露服务"，返回true 表示延迟；false表示不延迟。
+         *           但是该方法真正意思却并非如此，当方法返回true时，表示无须延迟暴露；false表示需要延迟暴露
+         *           与字面意思刚好相反
+         */
+        // 是否延迟暴露 && 是否已暴露 && 是不是已被取消暴露
         if (isDelay() && !isExported() && !isUnexported()) {
             if (logger.isInfoEnabled()) {
                 logger.info("The service ready on spring started. service: " + getInterface());
             }
+            // 暴露服务
             export();
         }
     }
 
     private boolean isDelay() {
+        // 获取delay
         Integer delay = getDelay();
         ProviderConfig provider = getProvider();
         if (delay == null && provider != null) {
+            // 如果前面获取的delay为空，这里继续获取
             delay = provider.getDelay();
         }
+        // 判断delay是否为空，或者等于-1
         return supportedApplicationListener && (delay == null || delay == -1);
     }
 
