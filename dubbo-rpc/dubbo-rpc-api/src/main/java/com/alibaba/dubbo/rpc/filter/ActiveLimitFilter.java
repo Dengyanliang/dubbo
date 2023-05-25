@@ -34,9 +34,13 @@ public class ActiveLimitFilter implements Filter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
+        // 获取url和调用方法名
         URL url = invoker.getUrl();
         String methodName = invocation.getMethodName();
+
+        // 获取设置的actives的值（默认为0）和最大可用并发数
         int max = invoker.getUrl().getMethodParameter(methodName, Constants.ACTIVES_KEY, 0);
+        // 根据URL和方法名获取对应的状态对象
         RpcStatus count = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName());
         if (max > 0) {
             long timeout = invoker.getUrl().getMethodParameter(invocation.getMethodName(), Constants.TIMEOUT_KEY, 0);
