@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * ConsistentHashLoadBalance
+ * 一致性hash
  *
  */
 public class ConsistentHashLoadBalance extends AbstractLoadBalance {
@@ -42,11 +43,14 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
     @SuppressWarnings("unchecked")
     @Override
     protected <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation) {
+        // 获取方法名
         String methodName = RpcUtils.getMethodName(invocation);
+        // 以接口名+方法名拼接出key
         String key = invokers.get(0).getUrl().getServiceKey() + "." + methodName;
 
-        // 获取invokers原始的hashcode
+        // 获取invokers原始的hashcode，也就是把所有可以调用的Invoker列表进行hash
         int identityHashCode = System.identityHashCode(invokers);
+
         ConsistentHashSelector<T> selector = (ConsistentHashSelector<T>) selectors.get(key);
 
         // 如果invokers是一个新的List对象，意味着服务提供者数量发生了变化，可能新增也可能减少了
@@ -89,6 +93,7 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
                     byte[] digest = md5(address + i);
                     // 对 digest 部分字节进行4次 hash 运算，得到四个不同的 long 型正整数
                     for (int h = 0; h < 4; h++) {
+
                         // h = 0 时，取 digest 中下标为 0 ~ 3 的4个字节进行位运算
                         // h = 1 时，取 digest 中下标为 4 ~ 7 的4个字节进行位运算
                         // h = 2, h = 3 时过程同上

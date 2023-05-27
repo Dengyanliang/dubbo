@@ -23,13 +23,14 @@ import com.alibaba.dubbo.common.extension.SPI;
 
 /**
  * ProxyFactory. (API/SPI, Singleton, ThreadSafe)
+ * 服务接口代理抽象，用于生成一个接口的代理类，默认是javassist字节码生成
  */
 @SPI("javassist")
 public interface ProxyFactory {
 
     /**
      * create proxy.
-     *
+     * 针对client端
      * @param invoker
      * @return proxy
      */
@@ -38,7 +39,7 @@ public interface ProxyFactory {
 
     /**
      * create proxy.
-     *
+     * 针对client端，创建接口的代理对象
      * @param invoker
      * @return proxy
      */
@@ -47,7 +48,7 @@ public interface ProxyFactory {
 
     /**
      * create invoker.
-     *
+     * 针对Server端：将服务对象包装成一个Invoker对象
      * @param <T>
      * @param proxy
      * @param type

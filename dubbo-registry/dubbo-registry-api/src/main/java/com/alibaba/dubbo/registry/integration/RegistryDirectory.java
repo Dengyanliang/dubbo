@@ -393,6 +393,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     }
 
     /**
+     * 服务消费服务通知
      * Turn urls into invokers, and if url has been refer, will not re-reference.
      *
      * @param urls
@@ -411,7 +412,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             if (queryProtocols != null && queryProtocols.length() > 0) {
                 boolean accept = false;
                 String[] acceptProtocols = queryProtocols.split(",");
-                // 检测服务提供者协议是否被服务消费者所支持
+                // 检测服务提供者协议是否被服务消费者所支持，根据消费方protocol配置过滤不匹配协议
                 for (String acceptProtocol : acceptProtocols) {
                     if (providerUrl.getProtocol().equals(acceptProtocol)) {
                         accept = true;
@@ -433,7 +434,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                         + ", supported protocol: " + ExtensionLoader.getExtensionLoader(Protocol.class).getSupportedExtensions()));
                 continue;
             }
-            // 合并 url
+            // 合并 url，合并provider端配置数据，比如服务端Ip和port等
             URL url = mergeUrl(providerUrl);
 
             String key = url.toFullString(); // The parameter urls are sorted
@@ -460,7 +461,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                         enabled = url.getParameter(Constants.ENABLED_KEY, true);
                     }
                     if (enabled) {
-                        // 调用 refer 获取 Invoker
+                        // 调用 refer 获取 Invoker，使用具体协议创建远程连接
                         invoker = new InvokerDelegate<T>(protocol.refer(serviceType, url), url, providerUrl);
                     }
                 } catch (Throwable t) {

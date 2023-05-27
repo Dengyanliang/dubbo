@@ -33,6 +33,7 @@ public interface RouterFactory {
 
     /**
      * Create router.
+     * 会根据URL中的protocol参数确定要初始化哪一个具体的Router实现
      *
      * @param url
      * @return router

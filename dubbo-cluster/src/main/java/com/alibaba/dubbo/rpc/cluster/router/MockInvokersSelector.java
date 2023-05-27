@@ -40,25 +40,33 @@ public class MockInvokersSelector extends AbstractRouter {
     @Override
     public <T> List<Invoker<T>> route(final List<Invoker<T>> invokers,
                                       URL url, final Invocation invocation) throws RpcException {
-        if (invocation.getAttachments() == null) {
+        if (invocation.getAttachments() == null) { // 不需要做Mock过滤
             return getNormalInvokers(invokers);
         } else {
             String value = invocation.getAttachments().get(Constants.INVOCATION_NEED_MOCK);
-            if (value == null)
+            if (value == null) // 不需要做Mock过滤
                 return getNormalInvokers(invokers);
-            else if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
+            else if (Boolean.TRUE.toString().equalsIgnoreCase(value)) { // 需要做Mock过滤
                 return getMockedInvokers(invokers);
             }
         }
         return invokers;
     }
 
+    /**
+     * 获取mock类型的Invoker
+     * @param invokers
+     * @param <T>
+     * @return
+     */
     private <T> List<Invoker<T>> getMockedInvokers(final List<Invoker<T>> invokers) {
+        // 都没有mock参数，返回null
         if (!hasMockProviders(invokers)) {
             return null;
         }
         List<Invoker<T>> sInvokers = new ArrayList<Invoker<T>>(1);
         for (Invoker<T> invoker : invokers) {
+            // 把protocol中所有含有mock标识的取出来并返回
             if (invoker.getUrl().getProtocol().equals(Constants.MOCK_PROTOCOL)) {
                 sInvokers.add(invoker);
             }
@@ -66,12 +74,20 @@ public class MockInvokersSelector extends AbstractRouter {
         return sInvokers;
     }
 
+    /**
+     * 获取非Mock类型的Invoker
+     * @param invokers
+     * @param <T>
+     * @return
+     */
     private <T> List<Invoker<T>> getNormalInvokers(final List<Invoker<T>> invokers) {
+        // 都没有Mock参数，返回整个列表
         if (!hasMockProviders(invokers)) {
             return invokers;
         } else {
             List<Invoker<T>> sInvokers = new ArrayList<Invoker<T>>(invokers.size());
             for (Invoker<T> invoker : invokers) {
+                // 把protocol中所有没有Mock标识的取出来并返回
                 if (!invoker.getUrl().getProtocol().equals(Constants.MOCK_PROTOCOL)) {
                     sInvokers.add(invoker);
                 }
@@ -80,6 +96,12 @@ public class MockInvokersSelector extends AbstractRouter {
         }
     }
 
+    /**
+     * 遍历所有的Invoker，只要任何一个Invoker的Protocol中有Mock参数，那么就返回true，否则返回false
+     * @param invokers
+     * @param <T>
+     * @return
+     */
     private <T> boolean hasMockProviders(final List<Invoker<T>> invokers) {
         boolean hasMockProvider = false;
         for (Invoker<T> invoker : invokers) {

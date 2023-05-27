@@ -18,6 +18,8 @@ package com.alibaba.dubbo.common.extension;
 
 /**
  * ExtensionFactory
+ * 用于创建这个指定 SPI 类型的扩展类实例。
+ * 这个实例也是通过SPI方式创建的，特殊的是，ExtensionFactory的ExtensionLoader的ExtensionFactory实例为null
  */
 @SPI
 public interface ExtensionFactory {

@@ -462,10 +462,10 @@ public class DubboProtocol extends AbstractProtocol {
             // connection should be lazy
             // 获取 lazy 配置，并根据配置值决定创建的客户端类型
             if (url.getParameter(Constants.LAZY_CONNECT_KEY, false)) {
-                // 创建懒加载 ExchangeClient 实例
+                // 创建懒加载 ExchangeClient 实例。如果配置了lazy属性，则真实调用才会创建TCP连接
                 client = new LazyConnectExchangeClient(url, requestHandler);
             } else {
-                // 创建普通 ExchangeClient 实例
+                // 创建普通 ExchangeClient 实例。立即与远程连接
                 client = Exchangers.connect(url, requestHandler);
             }
         } catch (RemotingException e) {

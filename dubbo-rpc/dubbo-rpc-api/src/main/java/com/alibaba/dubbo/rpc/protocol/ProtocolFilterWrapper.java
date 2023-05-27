@@ -49,7 +49,9 @@ public class ProtocolFilterWrapper implements Protocol {
         if (!filters.isEmpty()) {
             for (int i = filters.size() - 1; i >= 0; i--) {
                 final Filter filter = filters.get(i);
+                // 会把真实的Invoker（服务对象ref）放到拦截器的末尾
                 final Invoker<T> next = last;
+                // 为每个filter生成一个exporter，依次串起来
                 last = new Invoker<T>() {
 
                     @Override
@@ -69,6 +71,7 @@ public class ProtocolFilterWrapper implements Protocol {
 
                     @Override
                     public Result invoke(Invocation invocation) throws RpcException {
+                        // 每次调用都会传递给下一个拦截器
                         return filter.invoke(next, invocation);
                     }
 

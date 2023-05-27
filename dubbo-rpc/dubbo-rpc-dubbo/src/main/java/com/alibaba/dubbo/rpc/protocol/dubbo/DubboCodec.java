@@ -211,9 +211,9 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
         RpcInvocation inv = (RpcInvocation) data;
 
         // 依次序列化 dubbo version、path、version
-        out.writeUTF(version);
-        out.writeUTF(inv.getAttachment(Constants.PATH_KEY));
-        out.writeUTF(inv.getAttachment(Constants.VERSION_KEY));
+        out.writeUTF(version); // 写入框架版本
+        out.writeUTF(inv.getAttachment(Constants.PATH_KEY)); // 写入调用接口
+        out.writeUTF(inv.getAttachment(Constants.VERSION_KEY)); // 写入接口指定的版本，默认为0.0.0
 
         // 序列化调用方法名
         out.writeUTF(inv.getMethodName());
@@ -225,7 +225,7 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
                 // 对运行时参数进行序列化
                 out.writeObject(encodeInvocationArgument(channel, inv, i));
             }
-        // 序列化 attachments
+        // 序列化 attachments，写入隐式参数
         out.writeObject(inv.getAttachments());
     }
 
@@ -234,11 +234,13 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
         Result result = (Result) data;
         // currently, the version value in Response records the version of Request
         // 检测当前协议版本是否支持带有 attachment 集合的 Response 对象
+        // 也就是判断客户端请求的版本是否支持服务端参数返回
         boolean attach = Version.isSupportResponseAttatchment(version);
         Throwable th = result.getException();
 
         // 异常信息为空
         if (th == null) {
+            // 提取正常返回结果
             Object ret = result.getValue();
             // 调用结果为空
             if (ret == null) {

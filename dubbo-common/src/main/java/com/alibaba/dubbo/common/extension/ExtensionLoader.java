@@ -44,6 +44,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 /**
+ * 用于加载并创建指定类型的扩展类实例。该类有两个成员变量组成：
+ *  一个是 Class 类型的 type ，用于标识这个 loader 可以加载的 SPI 类型；
+ *  一个是 ExtensionFactory ，用于创建这个指定 SPI 类型的扩展类实例。
  * Load dubbo extensions
  * <ul>
  * <li>auto inject dependency extension </li>
@@ -74,9 +77,9 @@ public class ExtensionLoader<T> {
 
     // ==============================
 
-    private final Class<?> type;
+    private final Class<?> type;    // 标识这个loader可以加载的SPI类型
 
-    private final ExtensionFactory objectFactory;
+    private final ExtensionFactory objectFactory; // 用于创建这个指定SPI类型的扩展类实例
 
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
 
@@ -730,7 +733,7 @@ public class ExtensionLoader<T> {
                 wrappers = cachedWrapperClasses;
             }
             wrappers.add(clazz); // 存储 clazz 到 cachedWrapperClasses 缓存中
-        } else {     // 程序进入此分支，表明 clazz 是一个普通的拓展类
+        } else {     // 程序进入此分支，表明 clazz 是一个普通的拓展类，也就是实现了SPI接口的拓展类
             // 检测 clazz 是否有默认的构造方法，如果没有，则抛出异常
             clazz.getConstructor();
             if (name == null || name.length() == 0) {
@@ -767,6 +770,14 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 判断是否是Wrapper类：
+     *  只包含一个参数，且这个参数是SPI接口类型。
+     *  即Wrapper实例中用于增强的SPI扩展类实例，是通过带参构造器传入的。
+     *
+     * @param clazz
+     * @return
+     */
     private boolean isWrapperClass(Class<?> clazz) {
         try {
             clazz.getConstructor(type);

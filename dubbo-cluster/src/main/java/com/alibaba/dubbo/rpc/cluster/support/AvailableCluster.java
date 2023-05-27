@@ -28,7 +28,7 @@ import java.util.List;
 
 /**
  * AvailableCluster
- *
+ * 多注册中心集群策略
  */
 public class AvailableCluster implements Cluster {
 
@@ -40,7 +40,9 @@ public class AvailableCluster implements Cluster {
         return new AbstractClusterInvoker<T>(directory) {
             @Override
             public Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
+                // 这里是注册中心Invoker实例
                 for (Invoker<T> invoker : invokers) {
+                    // 判断特定注册中心是否包含provider服务
                     if (invoker.isAvailable()) {
                         return invoker.invoke(invocation);
                     }

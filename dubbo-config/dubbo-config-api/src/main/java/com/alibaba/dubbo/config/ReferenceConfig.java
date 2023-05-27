@@ -439,9 +439,11 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
                         // 检测 url 协议是否为 registry，若是，表明用户想使用指定的注册中心
                         if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
+                            // 允许直连地址写成注册中心
                             // 将 map 转换为查询字符串，并作为 refer 参数的值添加到 url 中
                             urls.add(url.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
                         } else {
+                            // 直连某一台服务提供者
                             // 合并 url，移除服务提供者的一些配置（这些配置来源于用户配置的 url 属性），
                             // 比如线程池相关配置。并保留服务提供者的部分配置，比如版本，group，时间戳等
                             // 最后将合并后的配置设置为 url 查询字符串中。
@@ -523,7 +525,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             logger.info("Refer dubbo service " + interfaceClass.getName() + " from url " + invoker.getUrl());
         }
         // create service proxy
-        // 生成代理类
+        // 把Invoker转换成接口代理，生成代理类
         return (T) proxyFactory.getProxy(invoker);
     }
 

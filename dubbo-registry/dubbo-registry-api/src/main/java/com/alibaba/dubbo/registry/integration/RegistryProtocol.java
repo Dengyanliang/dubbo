@@ -153,7 +153,7 @@ public class RegistryProtocol implements Protocol {
         URL registryUrl = getRegistryUrl(originInvoker);
 
         //registry provider
-        // 根据 URL 加载 Registry 实现类，比如 ZookeeperRegistry
+        // 根据 URL 加载 Registry 实现类，比如 ZookeeperRegistry，也就是创建注册中心实例
         final Registry registry = getRegistry(originInvoker);
 
         // 获取已注册的服务提供者 URL，比如：
@@ -169,7 +169,7 @@ public class RegistryProtocol implements Protocol {
 
         // 根据 register 的值决定是否注册服务
         if (register) {
-            // 向注册中心注册服务
+            // 向注册中心注册服务，注册服务元数据
             register(registryUrl, registeredProviderUrl);
             ProviderConsumerRegTable.getProviderWrapper(originInvoker).setReg(true);
         }
@@ -305,6 +305,14 @@ public class RegistryProtocol implements Protocol {
         return key;
     }
 
+    /**
+     * 通过注册中心消费
+     * @param type Service class
+     * @param url  URL address for the remote service 远程服务的URL地址
+     * @param <T>
+     * @return
+     * @throws RpcException
+     */
     @Override
     @SuppressWarnings("unchecked")
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
@@ -317,7 +325,7 @@ public class RegistryProtocol implements Protocol {
         }
 
         // group="a,b" or group="*"
-        // 将 url 查询字符串转为 Map
+        // 将 url 查询字符串转为 Map，根据配置处理多分组结果聚合
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(Constants.REFER_KEY));
         // 获取 group 配置
         String group = qs.get(Constants.GROUP_KEY);
@@ -328,7 +336,7 @@ public class RegistryProtocol implements Protocol {
                 return doRefer(getMergeableCluster(), registry, type, url);
             }
         }
-        // 调用 doRefer 继续执行服务引用逻辑
+        // 调用 doRefer 继续执行服务引用逻辑，处理订阅数据并通过Cluster合并多个Invoker
         return doRefer(cluster, registry, type, url);
     }
 
@@ -337,7 +345,7 @@ public class RegistryProtocol implements Protocol {
     }
 
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
-        // 创建 RegistryDirectory 实例
+        // 创建 RegistryDirectory 实例，消费核心关键，持有实际Invoker和接收订阅通知
         RegistryDirectory<T> directory = new RegistryDirectory<T>(type, url);
         // 设置注册中心和协议
         directory.setRegistry(registry);
@@ -351,6 +359,7 @@ public class RegistryProtocol implements Protocol {
         if (!Constants.ANY_VALUE.equals(url.getServiceInterface())
                 && url.getParameter(Constants.REGISTER_KEY, true)) {
             URL registeredConsumerUrl = getRegisteredConsumerUrl(subscribeUrl, url);
+            // 注册消费信息到注册中心
             registry.register(registeredConsumerUrl);
             directory.setRegisteredConsumerUrl(registeredConsumerUrl);
         }
@@ -545,6 +554,7 @@ public class RegistryProtocol implements Protocol {
         public void unexport() {
             Registry registry = RegistryProtocol.INSTANCE.getRegistry(originInvoker);
             try {
+                // 移除已注册的元数据
                 registry.unregister(registerUrl);
             } catch (Throwable t) {
                 logger.warn(t.getMessage(), t);

@@ -90,7 +90,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     protected ModuleConfig module;
 
     // registry centers
-    protected List<RegistryConfig> registries;
+    protected List<RegistryConfig> registries; // 注册中心列表
 
     // connection events
     protected String onconnect;

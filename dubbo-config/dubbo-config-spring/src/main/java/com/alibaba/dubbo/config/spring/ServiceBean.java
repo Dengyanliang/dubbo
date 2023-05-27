@@ -60,7 +60,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
 
     private transient ApplicationContext applicationContext;
 
-    private transient String beanName;
+    private transient String beanName;  // 对应xml中的id
 
     private transient boolean supportedApplicationListener;
 

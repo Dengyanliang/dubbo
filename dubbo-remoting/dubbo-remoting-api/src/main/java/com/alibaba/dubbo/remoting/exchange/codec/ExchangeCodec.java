@@ -232,13 +232,14 @@ public class ExchangeCodec extends TelnetCodec {
     }
 
     protected void encodeRequest(Channel channel, ChannelBuffer buffer, Request req) throws IOException {
+        // 获取指定或默认的序列化方式，默认是的hessian2
         Serialization serialization = getSerialization(channel);
         // header.
-        // 创建消息头字节数组，长度为 16
+        // 创建消息头字节数组，长度为 16字节
         byte[] header = new byte[HEADER_LENGTH];
 
         // set magic number.
-        // 设置魔数
+        // 设置魔数，长度为2字节
         Bytes.short2bytes(MAGIC, header);
 
         // set request and serialization flag.
@@ -267,7 +268,7 @@ public class ExchangeCodec extends TelnetCodec {
             // 对事件数据进行序列化操作
             encodeEventData(channel, out, req.getData());
         } else {
-            // 对请求数据进行序列化操作
+            // 对请求数据进行序列化操作，data一般是RpcInvocation
             encodeRequestData(channel, out, req.getData(), req.getVersion());
         }
         out.flushBuffer();
@@ -279,6 +280,7 @@ public class ExchangeCodec extends TelnetCodec {
 
         // 获取写入的字节数，也就是消息体长度
         int len = bos.writtenBytes();
+        // 检查是否超过8M
         checkPayload(channel, len);
 
         // 将消息体长度写入到消息头中
@@ -298,6 +300,7 @@ public class ExchangeCodec extends TelnetCodec {
     protected void encodeResponse(Channel channel, ChannelBuffer buffer, Response res) throws IOException {
         int savedWriteIndex = buffer.writerIndex();
         try {
+            // 获取指定或默认的序列化方式，默认为Hessian2
             Serialization serialization = getSerialization(channel);
             // header.
             // 创建消息头字节数组
@@ -344,6 +347,7 @@ public class ExchangeCodec extends TelnetCodec {
 
             // 获取写入的字节数，也就是消息体长度
             int len = bos.writtenBytes();
+            // 检查是否超过默认的8MB大小
             checkPayload(channel, len);
 
             // 将消息体长度写入到消息头中
@@ -367,6 +371,7 @@ public class ExchangeCodec extends TelnetCodec {
                     logger.warn(t.getMessage(), t);
                     try {
                         r.setErrorMessage(t.getMessage());
+                        // 告知客户端数据包长度超过限制
                         channel.send(r);
                         return;
                     } catch (RemotingException e) {

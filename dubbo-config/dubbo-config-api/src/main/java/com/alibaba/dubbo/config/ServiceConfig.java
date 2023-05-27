@@ -79,13 +79,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
 
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
-    private final List<URL> urls = new ArrayList<URL>();
-    private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
+    private final List<URL> urls = new ArrayList<URL>(); // 已发布的服务地址列表
+    private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>(); // 已发布的服务列表
     // interface type
-    private String interfaceName;
-    private Class<?> interfaceClass;
+    private String interfaceName; // 对应xml中的interface
+    private Class<?> interfaceClass;    // 通过Class.forName(interfaceName)生成
     // reference to interface impl
-    private T ref;
+    private T ref;  // 接口实现引用，对应xml中的ref
     // service name
     private String path;
     // method configuration
@@ -384,7 +384,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private void doExportUrls() {
         // 加载注册中心链接
         List<URL> registryURLs = loadRegistries(true);
-        // 遍历protocols，并在每个协议下暴露服务
+        // 如果服务指定暴露多个协议，则遍历protocols，并在每个协议下暴露服务
         for (ProtocolConfig protocolConfig : protocols) {
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
@@ -407,8 +407,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         }
 
         // 通过反射将对象的字段信息添加到map中
+        // 读取其他配置信息到map，用于后续构造URL
         appendParameters(map, application);
         appendParameters(map, module);
+        // 读取全局配置信息，会自动添加前缀
         appendParameters(map, provider, Constants.DEFAULT_KEY);
         appendParameters(map, protocolConfig);
         appendParameters(map, this);
@@ -583,7 +585,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         // 加载监视器链接
                         URL monitorUrl = loadMonitor(registryURL);
                         if (monitorUrl != null) {
-                            // 将监视器链接作为参数添加到url中
+                            // 将监视器链接作为参数添加到url中。即如果配置了监控地址，则服务调用信息会上报
                             url = url.addParameterAndEncoded(Constants.MONITOR_KEY, monitorUrl.toFullString());
                         }
                         if (logger.isInfoEnabled()) {
@@ -596,12 +598,12 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                             registryURL = registryURL.addParameter(Constants.PROXY_KEY, proxy);
                         }
 
-                        // 为服务提供者(ref)生成Invoker
+                        // 通过ProxyFactory为服务提供者(ref)生成Invoker
                         Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
                         // DelegateProviderMetaDataInvoker 用于持有Invoker 和 ServiceConfig
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
-                        // 暴露服务，并生成Exporter
+                        // 暴露服务，并生成Exporter。暴露服务后向注册信息注册服务信息
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         exporters.add(exporter);
                     }

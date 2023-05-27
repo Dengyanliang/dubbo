@@ -108,10 +108,14 @@ public class MockClusterInvoker<T> implements Invoker<T> {
         Result result = null;
         Invoker<T> minvoker;
 
+        // 获取所有Mock类型的Invoker
         List<Invoker<T>> mockInvokers = selectMockInvoker(invocation);
+        // 一个mock类型的Invoker都没有返回
         if (mockInvokers == null || mockInvokers.isEmpty()) {
+            // 则通过directory的URL新创建一个MockInvoker
             minvoker = (Invoker<T>) new MockInvoker(directory.getUrl());
-        } else {
+        } else { // 有mock类型的Invoker
+            // 使用第一个
             minvoker = mockInvokers.get(0);
         }
         try {

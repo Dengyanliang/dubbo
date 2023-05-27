@@ -67,8 +67,10 @@ public class ConditionRouter extends AbstractRouter {
             // 定位 => 分隔符
             int i = rule.indexOf("=>");
 
-            // 分别获取服务消费者和提供者匹配规则
+            // 分别获取服务消费者和提供者匹配规则，
+            // whenRule是消费者匹配条件
             String whenRule = i < 0 ? null : rule.substring(0, i).trim();
+            // thenRule是提供者地址列表的过滤条件
             String thenRule = i < 0 ? rule.trim() : rule.substring(i + 2).trim();
 
             // 解析服务消费者匹配规则
@@ -87,30 +89,7 @@ public class ConditionRouter extends AbstractRouter {
     }
 
     /**
-     *   // 通过正则表达式匹配路由规则，ROUTE_PATTERN = ([&!=,]*)\s*([^&!=,\s]+)
-     *   // 这个表达式看起来不是很好理解，第一个括号内的表达式用于匹配"&", "!", "=" 和 "," 等符号。
-     *   // 第二括号内的用于匹配英文字母，数字等字符。举个例子说明一下：
-     *   //    host = 2.2.2.2 & host != 1.1.1.1 & method = hello
-     *   // 匹配结果如下：
-     *   //     括号一      括号二
-     *   // 1.  null       host
-     *   // 2.   =         2.2.2.2
-     *   // 3.   &         host
-     *   // 4.   !=        1.1.1.1
-     *   // 5.   &         method
-     *   // 6.   =         hello
-     *
-     *   // 循环结束，得到的内容如下：
-     *   // {
-     *   //    "host": {
-     *   //        "matches": ["2.2.2.2"],
-     *   //        "mismatches": ["1.1.1.1"]
-     *   //    },
-     *   //    "method": {
-     *   //        "matches": ["hello"],
-     *   //        "mismatches": []
-     *   //    }
-     *   //}
+     * 解析路由规则
      * @param rule
      * @return
      * @throws ParseException
@@ -127,6 +106,30 @@ public class ConditionRouter extends AbstractRouter {
         // Multiple values
         Set<String> values = null;
 
+        // 通过正则表达式匹配路由规则，ROUTE_PATTERN = ([&!=,]*)\s*([^&!=,\s]+)
+        // 这个表达式看起来不是很好理解，第一个括号内的表达式用于匹配"&", "!", "=" 和 "," 等符号。
+        // 第二括号内的用于匹配英文字母，数字等字符。举个例子说明一下：
+        //    host = 2.2.2.2 & host != 1.1.1.1 & method = hello
+        // 匹配结果如下：
+        //     括号一      括号二
+        // 1.  null       host
+        // 2.   =         2.2.2.2
+        // 3.   &         host
+        // 4.   !=        1.1.1.1
+        // 5.   &         method
+        // 6.   =         hello
+
+        // 循环结束，得到的内容如下：
+        // {
+        //    "host": {
+        //        "matches": ["2.2.2.2"],
+        //        "mismatches": ["1.1.1.1"]
+        //    },
+        //    "method": {
+        //        "matches": ["hello"],
+        //        "mismatches": []
+        //    }
+        //}
         final Matcher matcher = ROUTE_PATTERN.matcher(rule);
         while (matcher.find()) { // Try to match one by one
             // 获取括号一内的匹配结果
@@ -216,7 +219,7 @@ public class ConditionRouter extends AbstractRouter {
                 return invokers;
             }
             List<Invoker<T>> result = new ArrayList<Invoker<T>>();
-            // 服务提供者匹配条件未配置，表明对指定的服务消费者禁用服务，也就是服务消费者在黑名单中
+            // 服务提供者匹配条件未配置，表明对指定的服务消费者禁用服务，也就是服务消费者在黑名单中，直接返回空
             if (thenCondition == null) {
                 logger.warn("The current consumer in the service blacklist. consumer: " + NetUtils.getLocalHost() + ", service: " + url.getServiceKey());
                 return result;
@@ -224,7 +227,7 @@ public class ConditionRouter extends AbstractRouter {
 
             // 这里可以简单的把 Invoker 理解为服务提供者，现在使用服务提供者匹配规则对Invoker 列表进行匹配
             for (Invoker<T> invoker : invokers) {
-                // 若匹配成功，表明当前 Invoker 符合服务提供者匹配规则。
+                // 通过thenRule找出所有符合规则的Invoker，若匹配成功，表明当前 Invoker 符合服务提供者匹配规则。
                 if (matchThen(invoker.getUrl(), url)) {
                     // 此时将 Invoker 添加到 result 列表中
                     result.add(invoker);
